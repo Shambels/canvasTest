@@ -18,24 +18,64 @@ var x0, y0;
 var x2, y2;
 var dx, dy;
 var mx, my;
+var rect;
 
 
 window.addEventListener('mousemove', () => {
   mouse.x = event.x;
   mouse.y = event.y;
+  // console.log(c.isPointInPath(mouse.x,mouse.y,rect));
+  
+  // If there's a shape already
+  if (x2 && y2 && x0 && y0){
+    // Check Rectangle orientation
+    // CASE 1
+    if (x2>x0 && y2>y0){
+      // Check if mouse is inside Rectangle on click   
+      if ((mouse.x > x0) && (mouse.x < x2) && (mouse.y > y0) && (mouse.y < y2)) {
+        isInside = true;
+        console.log('isInside = ' + isInside);
+      } else {
+        isInside = false;
+        console.log('isInside = ' + isInside);
+      }
+    }
+    // CASE 2 
+    if (x2>x0 && y2<y0){      
+      if ((mouse.x > x0) && (mouse.x < x2) && (mouse.y < y0) && (mouse.y > y2)) {
+        isInside = true;
+        console.log('isInside = ' + isInside);
+      } else {
+        isInside = false;
+        console.log('isInside = ' + isInside);
+      }
+    }
+    // CASE 3
+    if (x2<x0 && y2<y0){      
+      if ((mouse.x < x0) && (mouse.x > x2) && (mouse.y < y0) && (mouse.y > y2)) {
+        isInside = true;
+        console.log('isInside = ' + isInside);
+      } else {
+        isInside = false;
+        console.log('isInside = ' + isInside);
+      }
+    }
+    // CASE 4
+    if (x2<x0 && y2>y0){       
+      if ((mouse.x < x0) && (mouse.x > x2) && (mouse.y > y0) && (mouse.y < y2)) {
+        isInside = true;
+        console.log('isInside = ' + isInside);
+      } else {
+        isInside = false;
+        console.log('isInside = ' + isInside);
+      }
+    }
+  }
 });
 
 if (isRectangle) {
 
   canvas.addEventListener('mousedown', () => {
-    // Check if mouse is inside Rectangle on click   
-    if ((mouse.x > x0) && (mouse.x < x2) && (mouse.y > y0) && (mouse.y < y2)) {
-      isInside = true;
-      console.log('isInside = ' + isInside);
-    } else {
-      isInside = false;
-      console.log('isInside = ' + isInside);
-    }
     if (isInside === false) {
       x0 = event.x;
       y0 = event.y;
@@ -62,10 +102,10 @@ if (isRectangle) {
         y0 = my;
       }
       if ( isDrawing || isMoving ) {
-        c.strokeStyle = "rgba(255,15,100,.9)";
-        c.setLineDash([5, 5]);
+        c.strokeStyle = "rgba(255,255,255,.9)";
+        c.setLineDash([5, 15]);
         c.clearRect(0, 0, canvas.width, canvas.height);
-        c.strokeRect(x0, y0, dx, dy);     
+        rect = c.strokeRect(x0, y0, dx, dy);     
       }
       canvas.addEventListener('mouseup', () => {
         isDrawing = false;
