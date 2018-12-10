@@ -60,3 +60,48 @@
       //   }
       // }
     }
+
+
+function drawfree() {
+
+
+     if (isFreeDraw) {
+      // Array[] of all coords
+      // Register Cursor Coords(on click)+push()
+      // 
+      // Start drawing LineTo(mouse.xy) on mousemove
+      // If first Point => BeginPath    
+      // If next ~= first,(==last) ==> close path
+    canvas.addEventListener('click', () => {
+      // Register Cursor Coords, push in array
+      nextPoint = {
+        x: mouse.x,
+        y: mouse.y
+      }
+      freeDrawPoints.push(nextPoint);
+      // If its the first point
+      if (freeDrawPoints.indexOf(nextPoint) === 0 ){      
+        c.beginPath();  
+        c.moveTo(nextPoint.x,nextPoint.y);    
+        isDrawing = true;
+      };
+      // if its the last point, close path & isDrawing=false
+  
+      // console.table(freeDrawPoints);
+  
+  
+  
+    })
+    canvas.addEventListener('mousemove', () => {
+      if (isDrawing === true) {
+        // drawFreeShape();
+         // Set Line Style
+        c.strokeStyle = "rgba(255,255,255,1)";
+        c.setLineDash([5, 5]);
+        c.lineTo(mouse.x,mouse.y);
+        c.stroke();
+        
+      }
+    })
+  }
+}

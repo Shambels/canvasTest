@@ -48,7 +48,13 @@ var dc = {
   x: undefined,
   y: undefined
 }
-var radius, fixradius;
+var radius;
+// FreeDraw
+var freeDrawPoints = []
+var nextPoint = {
+  x: undefined,
+  y: undefined
+}
 
 function drawCircle() {
   // Set Line Style
@@ -63,7 +69,7 @@ function drawCircle() {
 
 function drawRectangle() {
   // Style
-  c.strokeStyle = "rgba(255,255,255,.9)";
+  c.strokeStyle = "rgba(255,255,255,1)";
   c.setLineDash([5, 5]);
   // Clear Canvas
   c.clearRect(0, 0, canvas.width, canvas.height);
@@ -136,6 +142,7 @@ window.addEventListener('mousemove', () => {
 
 if (isRectangle) {
   canvas.addEventListener('mousedown', () => {
+    mouseDown = true;
     if (isInside === false) {
       // set Origin on Cursor location
       x0 = event.x;
@@ -197,9 +204,7 @@ if (isRectangle) {
       isMoving = true;
       // Register current Center (x0,y0);
       x0 = center.x;
-      y0 = center.y;
-      // registercurrent radius
-      fixradius = radius
+      y0 = center.y;            
       // Register mouse pos on dragstart 
       mx0 = mouse.x;
       my0 = mouse.y;      
@@ -216,12 +221,9 @@ if (isRectangle) {
         center.y = y0 + dc.y;
       } else {
         center.x = x0 + (mouse.x-mx0);
-        center.y = y0 + (mouse.y-my0);
-        // radius = fixradius;
+        center.y = y0 + (mouse.y-my0);        
       }
-      if (isDrawing || isMoving) {
-        // console.warn('center', center);
-        // console.log('radius',radius);
+      if (isDrawing || isMoving) {   
         drawCircle();
       }
       canvas.addEventListener('mouseup', () => {
@@ -235,11 +237,55 @@ if (isRectangle) {
     
   });
 } else if (isFreeDraw) {
-  canvas.addEventListener('click', () => {
-    // Register Cursor Coords
+    // Array[] of all coords
+    // Register Cursor Coords(on click)+push()
+    // 
     // Start drawing LineTo(mouse.xy) on mousemove
     // If first Point => BeginPath    
     // If next ~= first,(==last) ==> close path
+
+
+  canvas.addEventListener('click', () => {
+    // Register Cursor Coords, push in array
+    nextPoint = {
+      x: mouse.x,
+      y: mouse.y
+    }
+    freeDrawPoints.push(nextPoint);    
+    if (freeDrawPoints.indexOf(nextPoint) === 0 ){      
+      c.beginPath();  
+      c.moveTo(nextPoint.x,nextPoint.y);    
+      isDrawing = true;
+    };
+    console.table(freeDrawPoints);
+    // if its the last point, close path & isDrawing=false
+
+    // console.table(freeDrawPoints);
+
+
+
+  })
+  canvas.addEventListener('mousemove', () => {
+    if (isDrawing === true) {
+      // drawFreeShape();
+       // Set Line Style
+      c.strokeStyle = "rgba(255,255,255,1)";
+      c.setLineDash([5, 5]);
+      c.clearRect(0, 0, canvas.width, canvas.height);
+      c.beginPath();
+
+    for (let i = 1; i < freeDrawPoints.length; i++) {       
+       c.moveTo(freeDrawPoints[i-1].x, freeDrawPoints[i-1].y);
+       c.lineTo(freeDrawPoints[i].x,freeDrawPoints[i].y);       
+    }        
+    
+
+      // c.beginPath();  
+      c.moveTo(nextPoint.x,nextPoint.y);
+      c.lineTo(mouse.x,mouse.y);
+      c.stroke();
+      
+    }
   })
 
 
