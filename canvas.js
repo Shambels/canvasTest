@@ -4,9 +4,7 @@ var c = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 800;
 var isDrawing = false;
-var isRectangle = false;
-var isCircle = false;
-var isFreeDraw = true;
+var isRectangle, isCircle, isFreeDraw
 var isInside = false;
 var isMoving = false;
 var Circle;
@@ -55,6 +53,8 @@ var nextPoint = {
   x: undefined,
   y: undefined
 }
+var close;
+var shapeClosed = false;
 
 function drawCircle() {
   // Set Line Style
@@ -105,7 +105,7 @@ function orderCornerPositions(a, b) {
   return a.x - b.x || a.y - b.y
 }
 
-
+function update() {
 // Permanent Mouse event Listener (get position / set cursor / ... )
 window.addEventListener('mousemove', () => {
   // Get Cursor Current Coords  
@@ -138,6 +138,17 @@ window.addEventListener('mousemove', () => {
       canvas.style.cursor = "crosshair";
     }
   }
+  if (shapeClosed === true) {
+    if (c.isPointInPath(mouse.x, mouse.y)) {
+      isInside = true;
+      // if (!isDrawing && !isMoving) {
+        canvas.style.cursor = "grab"
+      // }
+    } else {
+      isInside = false;
+      canvas.style.cursor = "crosshair";
+    }
+  }
 });
 
 if (isRectangle) {
@@ -159,32 +170,32 @@ if (isRectangle) {
     }
 
     canvas.addEventListener('mousemove', function rectangleOnMove() {
-      if (mouseDown ===true) {
+      if (mouseDown === true) {
 
         if (isMoving === false) {
           // Define New Rectangle dimensions from origin to Cursor.
           x2 = event.x;
-        y2 = event.y;
-        dx = x2 - x0;
-        dy = y2 - y0;
-      } else {
-        mx = dx0 + (mouse.x - mx0);
-        my = dy0 + (mouse.y - my0);
-        x2 = mx + dx;
-        y2 = my + dy;
-        x0 = mx;
-        y0 = my;
+          y2 = event.y;
+          dx = x2 - x0;
+          dy = y2 - y0;
+        } else {
+          mx = dx0 + (mouse.x - mx0);
+          my = dy0 + (mouse.y - my0);
+          x2 = mx + dx;
+          y2 = my + dy;
+          x0 = mx;
+          y0 = my;
+        }
+        if (isDrawing || isMoving) {
+          drawRectangle();
+        }
+        canvas.addEventListener('mouseup', () => {
+          isDrawing = false;
+          isMoving = false;
+          mouseDown = false;
+          canvas.removeEventListener('mousemove', rectangleOnMove);
+        })
       }
-      if (isDrawing || isMoving) {
-        drawRectangle();
-      }
-      canvas.addEventListener('mouseup', () => {
-        isDrawing = false;
-        isMoving = false;
-        mouseDown = false;
-        canvas.removeEventListener('mousemove', rectangleOnMove);
-      })
-    }
     });
   });
 
@@ -204,90 +215,84 @@ if (isRectangle) {
       isMoving = true;
       // Register current Center (x0,y0);
       x0 = center.x;
-      y0 = center.y;            
+      y0 = center.y;
       // Register mouse pos on dragstart 
       mx0 = mouse.x;
-      my0 = mouse.y;      
+      my0 = mouse.y;
     }
-    canvas.addEventListener('mousemove', function circleOnMove() {   
+    canvas.addEventListener('mousemove', function circleOnMove() {
       if (mouseDown === true) {
-      if (isMoving === false) {
-        // Radius: (dc = X & Y components ) 
-        dc.x = (event.x - x0) / 2;
-        dc.y = (event.y - y0) / 2;
-        radius = Math.sqrt(Math.pow(dc.x, 2) + Math.pow(dc.y, 2));
-        // Center: X and Y Coords      
-        center.x = x0 + dc.x;
-        center.y = y0 + dc.y;
-      } else {
-        center.x = x0 + (mouse.x-mx0);
-        center.y = y0 + (mouse.y-my0);        
+        if (isMoving === false) {
+          // Radius: (dc = X & Y components ) 
+          dc.x = (event.x - x0) / 2;
+          dc.y = (event.y - y0) / 2;
+          radius = Math.sqrt(Math.pow(dc.x, 2) + Math.pow(dc.y, 2));
+          // Center: X and Y Coords      
+          center.x = x0 + dc.x;
+          center.y = y0 + dc.y;
+        } else {
+          center.x = x0 + (mouse.x - mx0);
+          center.y = y0 + (mouse.y - my0);
+        }
+        if (isDrawing || isMoving) {
+          drawCircle();
+        }
+        canvas.addEventListener('mouseup', () => {
+          isDrawing = false;
+          isMoving = false;
+          mouseDown = false;
+          canvas.removeEventListener('mousemove', circleOnMove);
+        })
       }
-      if (isDrawing || isMoving) {   
-        drawCircle();
-      }
-      canvas.addEventListener('mouseup', () => {
-        isDrawing = false;
-        isMoving = false;
-        mouseDown = false;
-        canvas.removeEventListener('mousemove', circleOnMove);
-      })
-    }
     });
-    
+
   });
 } else if (isFreeDraw) {
-    // Array[] of all coords
-    // Register Cursor Coords(on click)+push()
-    // 
-    // Start drawing LineTo(mouse.xy) on mousemove
-    // If first Point => BeginPath    
-    // If next ~= first,(==last) ==> close path
-
-
-  canvas.addEventListener('click', () => {
+  canvas.addEventListener('click', function addAnchors() {
     // Register Cursor Coords, push in array
+    if (shapeClosed === true) {
+      freeDrawPoints = [];
+      shapeClosed = false;
+    }
     nextPoint = {
       x: mouse.x,
       y: mouse.y
     }
-    freeDrawPoints.push(nextPoint);    
-    if (freeDrawPoints.indexOf(nextPoint) === 0 ){      
-      c.beginPath();  
-      c.moveTo(nextPoint.x,nextPoint.y);    
+    if ( close < 8 && freeDrawPoints.indexOf(nextPoint)>2) { 
+      nextPoint = freeDrawPoints[0];
+   }
+    freeDrawPoints.push(nextPoint);
+    if (freeDrawPoints.indexOf(nextPoint) === 0) {
+      c.beginPath();
+      c.moveTo(nextPoint.x, nextPoint.y);
       isDrawing = true;
-    };
+    };     
     console.table(freeDrawPoints);
-    // if its the last point, close path & isDrawing=false
-
-    // console.table(freeDrawPoints);
-
-
-
   })
   canvas.addEventListener('mousemove', () => {
     if (isDrawing === true) {
-      // drawFreeShape();
-       // Set Line Style
       c.strokeStyle = "rgba(255,255,255,1)";
       c.setLineDash([5, 5]);
       c.clearRect(0, 0, canvas.width, canvas.height);
       c.beginPath();
 
-    for (let i = 1; i < freeDrawPoints.length; i++) {       
-       c.moveTo(freeDrawPoints[i-1].x, freeDrawPoints[i-1].y);
-       c.lineTo(freeDrawPoints[i].x,freeDrawPoints[i].y);       
-    }        
-    
-
-      // c.beginPath();  
-      c.moveTo(nextPoint.x,nextPoint.y);
-      c.lineTo(mouse.x,mouse.y);
-      c.stroke();
+      for (let i = 1; i < freeDrawPoints.length; i++) {
+        c.moveTo(freeDrawPoints[i - 1].x, freeDrawPoints[i - 1].y);
+        c.lineTo(freeDrawPoints[i].x, freeDrawPoints[i].y);
+      }
       
+      close = Math.sqrt(Math.pow(nextPoint.x-freeDrawPoints[0].x,2)+Math.pow(nextPoint.y-freeDrawPoints[0].y,2));
+      if ( close < 8 && nextPoint !== freeDrawPoints[0]) {        
+        c.closePath();
+        isDrawing = false;     
+        shapeClosed = true;   
+      } 
+      c.moveTo(nextPoint.x, nextPoint.y);
+      c.lineTo(mouse.x, mouse.y);
+      c.stroke();
     }
   })
 
-
+}
 
 }
