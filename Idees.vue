@@ -1,6 +1,9 @@
 <template>
 <div>
-  <canvas v-for="layer in layers" :key="layer" id="layer{{id}}"></canvas>
+  <!-- <canvas @mousemove="" @mousedown="" @mouseup="" @click="" v-for="layer in layers" :key="layer" id="layer{{id}}"></canvas> -->
+  <!-- <button @click=""></button> -->
+  <!-- <button @click=""></button> -->
+  <!-- <button @click=""></button> -->
 </div>
 </template>
 

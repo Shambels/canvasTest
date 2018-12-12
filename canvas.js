@@ -4,7 +4,8 @@ var c = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 800;
 var isDrawing = false;
-var isRectangle, isCircle, isFreeDraw
+var isRectangle;
+var isCircle, isFreeDraw
 var isInside = false;
 var isMoving = false;
 var Circle;
@@ -296,3 +297,5 @@ if (isRectangle) {
 }
 
 }
+
+update();
