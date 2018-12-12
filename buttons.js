@@ -1,26 +1,26 @@
 function chooseRectangleTool() {
-  isCircle = false;
-  isFreeDraw = false;
-  isRectangle = true;
+  toolIsCircle = false;
+  toolIsFreeDraw = false;
+  toolIsRectangle = true;
   update();
 
-  console.log(isRectangle, isCircle, isFreeDraw);
+  console.log(toolIsRectangle, toolIsCircle, toolIsFreeDraw);
 }
 
 function chooseCircleTool() {
-  isRectangle = false;
-  isFreeDraw = false;
-  isCircle = true;
+  toolIsRectangle = false;
+  toolIsFreeDraw = false;
+  toolIsCircle = true;
   update();
-  console.log(isRectangle, isCircle, isFreeDraw);
+  console.log(toolIsRectangle, toolIsCircle, toolIsFreeDraw);
 }
 
 function chooseFreeDrawTool() {
-  isRectangle = false;
-  isCircle = false;
-  isFreeDraw = true;
+  toolIsRectangle = false;
+  toolIsCircle = false;
+  toolIsFreeDraw = true;
   update();
-  console.log(isRectangle, isCircle, isFreeDraw);
+  console.log(toolIsRectangle, toolIsCircle, toolIsFreeDraw);
 };
 
 document.getElementById('chooseRectangleBtn').addEventListener('click', chooseRectangleTool);

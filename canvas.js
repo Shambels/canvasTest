@@ -1,11 +1,10 @@
 var canvas = document.querySelector('canvas');
 canvas.style.cursor = "crosshair";
 var c = canvas.getContext('2d');
-canvas.width = 800;
-canvas.height = 800;
+canvas.width = 900;
+canvas.height = 900;
 var isDrawing = false;
-var isRectangle;
-var isCircle, isFreeDraw
+var toolIsRectangle, toolIsCircle, toolIsFreeDraw = true;
 var isInside = false;
 var isMoving = false;
 var Circle;
@@ -54,6 +53,7 @@ var nextPoint = {
   x: undefined,
   y: undefined
 }
+var lastPoint;
 var close;
 var shapeClosed = false;
 
@@ -83,6 +83,32 @@ function drawRectangle() {
   corners.sort(orderCornerPositions);
 }
 
+function drawFreeShape() {
+  c.strokeStyle = "rgba(255,255,255,1)";
+  c.setLineDash([5, 5]);
+  c.clearRect(0, 0, canvas.width, canvas.height);
+  c.beginPath();
+
+  for (let i = 1; i < freeDrawPoints.length; i++) {
+    c.moveTo(freeDrawPoints[i - 1].x, freeDrawPoints[i - 1].y);
+    c.lineTo(freeDrawPoints[i].x, freeDrawPoints[i].y);
+  }
+
+  if (shapeClosed) {   
+    c.moveTo(nextPoint.x, nextPoint.y);
+    c.lineTo(freeDrawPoints[0].x,freeDrawPoints[0].y);
+  }  
+
+    if (!shapeClosed) {
+      c.moveTo(nextPoint.x, nextPoint.y);
+      c.lineTo(mouse.x, mouse.y);
+    }
+      // }
+      c.closePath();  
+  c.stroke();
+
+}
+
 function getCornerPositions() {
   ca = {
     x: x0,
@@ -107,72 +133,59 @@ function orderCornerPositions(a, b) {
 }
 
 function update() {
-// Permanent Mouse event Listener (get position / set cursor / ... )
-window.addEventListener('mousemove', () => {
-  // Get Cursor Current Coords  
-  mouse.x = event.x;
-  mouse.y = event.y;
-  // If there's a RECTANGLE already
-  if (x2 && y2 && x0 && y0) {
-    // Find 4 corners coord (ca = origin / cd = end)
-    getCornerPositions();
-    // Check if cursor is inside RECTANGLE
-    if (c.isPointInPath(mouse.x, mouse.y)) {
-      isInside = true;
-      if (!isDrawing && !isMoving) {
-        canvas.style.cursor = "grab"
+  // Permanent Mouse event Listener (get position / set cursor / ... )
+  canvas.addEventListener('mousemove', () => {
+    // Get Cursor Current Coords  
+    mouse.x = event.x;
+    mouse.y = event.y;
+    // If there's a RECTANGLE already
+    if (x2 && y2 && x0 && y0) {
+      shapeIsRectangle = true;
+      // Find 4 corners coord (ca = origin / cd = end)
+      getCornerPositions();
+      // Check if cursor is inside RECTANGLE
+      if (c.isPointInPath(mouse.x, mouse.y)) {
+        isInside = true;
+        if (!isDrawing && !isMoving) {
+          canvas.style.cursor = "grab"
+        }
+      } else {
+        isInside = false;
+        canvas.style.cursor = "crosshair";
       }
-    } else {
-      isInside = false;
-      canvas.style.cursor = "crosshair";
     }
-  }
-  // if there is a CIRCLE already 
-  if (center && radius) {
-    if (c.isPointInPath(mouse.x, mouse.y)) {
-      isInside = true;
-      if (!isDrawing && !isMoving) {
-        canvas.style.cursor = "grab";
+    // if there is a CIRCLE already 
+    if (center && radius) {
+      shapeIsCircle = true;
+      if (c.isPointInPath(mouse.x, mouse.y)) {
+        isInside = true;
+        if (!isDrawing && !isMoving) {
+          canvas.style.cursor = "grab";
+        }
+      } else {
+        isInside = false;
+        canvas.style.cursor = "crosshair";
       }
-    } else {
-      isInside = false;
-      canvas.style.cursor = "crosshair";
     }
-  }
-  if (shapeClosed === true) {
-    if (c.isPointInPath(mouse.x, mouse.y)) {
-      isInside = true;
-      // if (!isDrawing && !isMoving) {
+    // if there's a FREE SHAPE already
+    if (shapeClosed === true) {
+      shapeIsFreeDraw = true;
+      drawFreeShape();
+      if (c.isPointInPath(mouse.x, mouse.y)) {
+        isInside = true;
+        console.log('ok');
+        // if (!isDrawing && !isMoving) {
         canvas.style.cursor = "grab"
-      // }
-    } else {
-      isInside = false;
-      canvas.style.cursor = "crosshair";
-    }
-  }
-});
-
-if (isRectangle) {
-  canvas.addEventListener('mousedown', () => {
-    mouseDown = true;
-    if (isInside === false) {
-      // set Origin on Cursor location
-      x0 = event.x;
-      y0 = event.y;
-      isDrawing = true;
-    } else {
-      // set Origin/ Dimensions as previous Shape's. 
-      canvas.style.cursor = "all-scroll";
-      isMoving = true;
-      dx0 = x0;
-      dy0 = y0;
-      mx0 = mouse.x;
-      my0 = mouse.y;
+        // }
+      } else {
+        console.log('pasok');
+        isInside = false;
+        canvas.style.cursor = "crosshair";
+      }
     }
 
-    canvas.addEventListener('mousemove', function rectangleOnMove() {
+    if (toolIsRectangle) {
       if (mouseDown === true) {
-
         if (isMoving === false) {
           // Define New Rectangle dimensions from origin to Cursor.
           x2 = event.x;
@@ -190,38 +203,8 @@ if (isRectangle) {
         if (isDrawing || isMoving) {
           drawRectangle();
         }
-        canvas.addEventListener('mouseup', () => {
-          isDrawing = false;
-          isMoving = false;
-          mouseDown = false;
-          canvas.removeEventListener('mousemove', rectangleOnMove);
-        })
       }
-    });
-  });
-
-  // ADD TO LAYER SO CLEARRECT DOESN't ERASE WHOLE CANVAS (EITHER ON ==>MOUSEUP<== OR ON "CONFIRM" BUTTON)
-
-  //************** * CIRCLE  *******************//
-} else if (isCircle) {
-  canvas.addEventListener('mousedown', () => {
-    mouseDown = true;
-    if (isInside === false) {
-      // Register where circle starts
-      x0 = mouse.x;
-      y0 = mouse.y;
-      isDrawing = true;
-    } else {
-      canvas.style.cursor = "all-scroll";
-      isMoving = true;
-      // Register current Center (x0,y0);
-      x0 = center.x;
-      y0 = center.y;
-      // Register mouse pos on dragstart 
-      mx0 = mouse.x;
-      my0 = mouse.y;
-    }
-    canvas.addEventListener('mousemove', function circleOnMove() {
+    } else if (toolIsCircle) {
       if (mouseDown === true) {
         if (isMoving === false) {
           // Radius: (dc = X & Y components ) 
@@ -238,64 +221,95 @@ if (isRectangle) {
         if (isDrawing || isMoving) {
           drawCircle();
         }
-        canvas.addEventListener('mouseup', () => {
-          isDrawing = false;
-          isMoving = false;
-          mouseDown = false;
-          canvas.removeEventListener('mousemove', circleOnMove);
-        })
       }
-    });
 
+    } else if (toolIsFreeDraw) {
+      if (!shapeClosed) {
+        drawFreeShape();
+      }
+    }
   });
-} else if (isFreeDraw) {
-  canvas.addEventListener('click', function addAnchors() {
-    // Register Cursor Coords, push in array
-    if (shapeClosed === true) {
-      freeDrawPoints = [];
-      shapeClosed = false;
-    }
-    nextPoint = {
-      x: mouse.x,
-      y: mouse.y
-    }
-    if ( close < 8 && freeDrawPoints.indexOf(nextPoint)>2) { 
-      nextPoint = freeDrawPoints[0];
-   }
-    freeDrawPoints.push(nextPoint);
-    if (freeDrawPoints.indexOf(nextPoint) === 0) {
-      c.beginPath();
-      c.moveTo(nextPoint.x, nextPoint.y);
-      isDrawing = true;
-    };     
-    console.table(freeDrawPoints);
-  })
-  canvas.addEventListener('mousemove', () => {
-    if (isDrawing === true) {
-      c.strokeStyle = "rgba(255,255,255,1)";
-      c.setLineDash([5, 5]);
-      c.clearRect(0, 0, canvas.width, canvas.height);
-      c.beginPath();
 
-      for (let i = 1; i < freeDrawPoints.length; i++) {
-        c.moveTo(freeDrawPoints[i - 1].x, freeDrawPoints[i - 1].y);
-        c.lineTo(freeDrawPoints[i].x, freeDrawPoints[i].y);
+  canvas.addEventListener('mouseup', () => {
+    if (!toolIsFreeDraw) {
+      isDrawing = false;
+      isMoving = false;
+      console.log('up');
+    }
+    mouseDown = false;
+    // canvas.removeEventListener('mousemove', rectangleOnMove);
+  });
+
+  canvas.addEventListener('mousedown', () => {
+    mouseDown = true;
+    if (toolIsRectangle) {
+      if (isInside === false) {
+        // set Origin on Cursor location
+        x0 = event.x;
+        y0 = event.y;
+        isDrawing = true;
+      } else {
+        // set Origin/ Dimensions as previous Shape's. 
+        canvas.style.cursor = "all-scroll";
+        isMoving = true;
+        dx0 = x0;
+        dy0 = y0;
+        mx0 = mouse.x;
+        my0 = mouse.y;
       }
-      
-      close = Math.sqrt(Math.pow(nextPoint.x-freeDrawPoints[0].x,2)+Math.pow(nextPoint.y-freeDrawPoints[0].y,2));
-      if ( close < 8 && nextPoint !== freeDrawPoints[0]) {        
-        c.closePath();
-        isDrawing = false;     
-        shapeClosed = true;   
-      } 
-      c.moveTo(nextPoint.x, nextPoint.y);
-      c.lineTo(mouse.x, mouse.y);
-      c.stroke();
+    } else if (toolIsCircle) {
+      mouseDown = true;
+      if (isInside === false) {
+        // Register where circle starts
+        x0 = mouse.x;
+        y0 = mouse.y;
+        isDrawing = true;
+      } else {
+        canvas.style.cursor = "all-scroll";
+        isMoving = true;
+        // Register current Center (x0,y0);
+        x0 = center.x;
+        y0 = center.y;
+        // Register mouse pos on dragstart 
+        mx0 = mouse.x;
+        my0 = mouse.y;
+      }
     }
-  })
+  });
 
+  canvas.addEventListener('click', function addAnchors() {
+    // Register Cursor Coords, push in array    
+    if (toolIsFreeDraw) {
+      if (shapeClosed === true) {
+        freeDrawPoints = [];
+        shapeClosed = false;
+      }
+      nextPoint = {
+        x: mouse.x,
+        y: mouse.y
+      }
+      if ( freeDrawPoints[1] ) {
+        close = Math.sqrt(Math.pow(nextPoint.x - freeDrawPoints[0].x, 2) + Math.pow(nextPoint.y - freeDrawPoints[0].y, 2));
+
+        if ( close < 8 ) {      
+
+          lastPoint = freeDrawPoints[0];
+          shapeClosed = true;   
+          // drawFreeShape();                    
+
+        }
+      }
+      freeDrawPoints.push(nextPoint);
+      if (freeDrawPoints.length < 2 ) {        
+        c.beginPath();
+        c.moveTo(nextPoint.x, nextPoint.y);
+        isDrawing = true;
+      };
+      console.table(freeDrawPoints); 
+      // c.closePath();     
+    }
+  });
 }
 
-}
 
 update();
