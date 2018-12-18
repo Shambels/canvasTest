@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <style>
+    #concreteContainer {
+      border: solid black 3px;
+      background-image: url('img/kimene.jpg');
+      background-repeat: no-repeat;
+      background-size: cover;
+      /* z-index: -999; */
+      /* background-color: rgba(255, 0, 0, 0.5); */
+      /* height: 800px;
+      width: 800px; */
+    }
+
+    body {
+      margin: 0
+    }
+  </style>
+</head>
+
+<body>
+
+
+
+  <div id="controls">
+    <button id="chooseRectangleBtn">Rect</button>
+    <button id="chooseCircleBtn">Circ</button>
+    <button id="chooseFreeDrawBtn">Free</button>
+    <button id="destroy">Destroy selected</button>
+    <button id="download">Download</button>
+  </div>
+
+  <div id="concreteContainer"></div>
+
+
+
+
+
+
+
+  <script src="node_modules/lodash/lodash.js"></script>
+  <script src="concrete.js"></script>
+  <script src="test.js"></script>
+  <script src="buttons.js"></script>
+</body>
+
+</html>
