@@ -34,6 +34,13 @@
     <button id="chooseFreeDrawBtn">Free</button>
     <button id="destroy">Destroy selected</button>
     <button id="download">Download</button>
+    <button id="addLayer">Add Layer</button>
+  </div>
+
+
+  <!-- FOR VUE -->
+  <div id="layers">
+    <layer v-for="layer in layers" :key="index">Layers X - Y - Z</layer>
   </div>
 
   <div id="concreteContainer"></div>

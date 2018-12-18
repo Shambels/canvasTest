@@ -1,37 +1,32 @@
 function drawCircle(config) {
   var scene = config.layer.scene;
-  var c = scene.context;
-  // Set Line Style
+  var c = scene.context;  
   c.strokeStyle = config.color;
-  // c.setLineDash([5, 5]);
-  c.fillStyle = config.color;
-  // Clear Canvas
+  c.setLineDash([5, 5]);
+  c.fillStyle = config.color;  
   scene.clear();
   c.save();
   c.beginPath();
-  c.arc(center.x, center.y, radius, 0, 2 * Math.PI, false);
-  // c.fill();
+  c.arc(center.x, center.y, radius, 0, 2 * Math.PI, false);  
   c.stroke();
-  c.restore();
-  // c.closePath();
+  c.restore();  
   viewport.render();
 }
 
 function drawHitCircle(config) {
   var hit = config.layer.hit,
-      context = hit.context;
+      c = hit.context;
   hit.clear();
-  context.save();
-  context.beginPath();
-  context.arc(center.x, center.y, radius, 0, 2 * Math.PI, false);
-  context.fillStyle = hit.getColorFromIndex(config.key);
-  context.fill();
-  context.restore();
+  c.save();
+  c.beginPath();
+  c.arc(center.x, center.y, radius, 0, 2 * Math.PI, false);  
+  c.fill();
+  c.restore();
 }
 
 function drawRectangle(config) {
-  var scene = config.layer.scene,
-c = scene.context;
+  var scene = config.layer.scene;
+  var c = scene.context;
   // Style
   c.strokeStyle = "rgba(255,255,255,1)";
   c.setLineDash([5, 5]);
@@ -97,9 +92,7 @@ function orderCornerPositions(a, b) {
   return a.x - b.x || a.y - b.y
 }
 
-
 var concreteContainer = document.getElementById('concreteContainer');
-console.log(concreteContainer);
 
 // create viewport
 var viewport = new Concrete.Viewport({
@@ -108,15 +101,22 @@ var viewport = new Concrete.Viewport({
   container: concreteContainer
 });
 
-// create layers
+var layers = [];
+// create Start Layer
 var layer1 = new Concrete.Layer();
-// var layer2 = new Concrete.Layer();
-// var layer3 = new Concrete.Layer();
+layers.push(layer1);
 
 // add layers
-viewport.add(layer1);
-
-
+function updateLayers(){
+  layers.forEach(layer => {
+    viewport.add(layer);
+  });
+}
+updateLayers();
+layer2= new Concrete.Layer();
+layers.push(layer2);
+updateLayers();
+console.log(viewport);
 
 concreteContainer.style.cursor = "crosshair";
 
@@ -247,7 +247,6 @@ concreteContainer.addEventListener('mouseup', () => {
   if (!toolIsFreeDraw) {
     isDrawing = false;
     isMoving = false;
-    console.log('up');
   }
   mouseDown = false;
   // canvas.removeEventListener('mousemove', rectangleOnMove);
