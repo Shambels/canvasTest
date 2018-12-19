@@ -53,6 +53,7 @@ var nextPoint = {
   x: undefined,
   y: undefined
 }
+
 var lastPoint;
 var close;
 var shapeClosed = false;
@@ -310,7 +311,5 @@ function update() {
     }
   });
 }
-
-
 update();
 

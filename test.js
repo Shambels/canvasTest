@@ -1,72 +1,67 @@
-function drawCircle(config) {
-  var scene = config.layer.scene;
-  var c = scene.context;  
-  c.strokeStyle = config.color;
-  c.setLineDash([5, 5]);
-  c.fillStyle = config.color;  
-  scene.clear();
-  c.save();
-  c.beginPath();
-  c.arc(center.x, center.y, radius, 0, 2 * Math.PI, false);  
-  c.stroke();
-  c.restore();  
-  viewport.render();
-}
-
-function drawHitCircle(config) {
+function drawHit(config) {
   var hit = config.layer.hit,
-      c = hit.context;
+    c = hit.context;
   hit.clear();
   c.save();
   c.beginPath();
-  c.arc(center.x, center.y, radius, 0, 2 * Math.PI, false);  
+  drawingSetup(c);
   c.fill();
   c.restore();
 }
 
-function drawRectangle(config) {
+function draw(config) {
   var scene = config.layer.scene;
   var c = scene.context;
-  // Style
-  c.strokeStyle = "rgba(255,255,255,1)";
+  c.strokeStyle = config.color;
   c.setLineDash([5, 5]);
-  // Clear Canvas
-  c.clearRect(0, 0, canvas.width, canvas.height);
-  // Start Drawing
+  c.fillStyle = config.color;
+  scene.clear();
+  c.save();
   c.beginPath();
+  if (toolIsRectangle) {
+    setupRectangle(c);    
+  } else if (toolIsCircle) {
+    setupCircle(c);
+  } else if (toolIsFreeDraw) {
+    setupFreeShape(c);
+  }
+  c.stroke();
+  c.restore();
+  viewport.render();
+}
+
+function drawingSetup(c) {
+  if (toolIsRectangle) {
+    setupRectangle(c);    
+  } else if (toolIsCircle) {
+    setupCircle(c);
+  } else if (toolIsFreeDraw) {
+    setupFreeShape(c);
+  }
+}
+function setupRectangle(c) {
   c.rect(x0, y0, dx, dy);
-  strokerect = c.strokeRect(x0, y0, dx, dy);
   // Find and sort corners
   corners = [ca, cb, cc, cd];
   corners.sort(orderCornerPositions);
 }
-
-function drawFreeShape(config) {
-  var scene = config.layer.scene,
-c = scene.context;
-  c.strokeStyle = "rgba(255,255,255,1)";
-  c.setLineDash([5, 5]);
-  c.clearRect(0, 0, canvas.width, canvas.height);
-  c.beginPath();
-
+function setupCircle(c) {
+  c.arc(center.x, center.y, radius, 0, 2 * Math.PI, false);
+}
+function setupFreeShape(c) {
   for (let i = 1; i < freeDrawPoints.length; i++) {
     c.moveTo(freeDrawPoints[i - 1].x, freeDrawPoints[i - 1].y);
     c.lineTo(freeDrawPoints[i].x, freeDrawPoints[i].y);
   }
-
-  if (shapeClosed) {   
+  if (shapeClosed) {
     c.moveTo(nextPoint.x, nextPoint.y);
-    c.lineTo(freeDrawPoints[0].x,freeDrawPoints[0].y);
-  }  
-
-    if (!shapeClosed) {
-      c.moveTo(nextPoint.x, nextPoint.y);
-      c.lineTo(mouse.x, mouse.y);
-    }
-      // }
-      c.closePath();  
-  c.stroke();
-
+    c.lineTo(freeDrawPoints[0].x, freeDrawPoints[0].y);
+  }
+  if (!shapeClosed) {
+    c.moveTo(nextPoint.x, nextPoint.y);
+    c.lineTo(mouse.x, mouse.y);
+  }
+  c.closePath();
 }
 
 function getCornerPositions() {
@@ -92,8 +87,8 @@ function orderCornerPositions(a, b) {
   return a.x - b.x || a.y - b.y
 }
 
-var concreteContainer = document.getElementById('concreteContainer');
 
+var concreteContainer = document.getElementById('concreteContainer');
 // create viewport
 var viewport = new Concrete.Viewport({
   width: 800,
@@ -103,20 +98,9 @@ var viewport = new Concrete.Viewport({
 
 var layers = [];
 // create Start Layer
-var layer1 = new Concrete.Layer();
-layers.push(layer1);
+layers[0] = new Concrete.Layer();
+viewport.add(layers[0]);
 
-// add layers
-function updateLayers(){
-  layers.forEach(layer => {
-    viewport.add(layer);
-  });
-}
-updateLayers();
-layer2= new Concrete.Layer();
-layers.push(layer2);
-updateLayers();
-console.log(viewport);
 
 concreteContainer.style.cursor = "crosshair";
 
@@ -177,117 +161,147 @@ var close;
 var shapeClosed = false;
 
 
-var circles = [
-  {
-    x: 0,
-    y: 0,
-    hovered: false,
-    selected: true,
-    layer: layer1,
-    color: 'red',
-    key: 0
-  }
-]
+var circles = [{
+  x: 0,
+  y: 0,
+  hovered: false,
+  selected: true,
+  layer: layers[0],
+  color: 'red',
+  key: 0
+}]
 var boundingRect;
 var key;
+
+
+function handleCursor() {
+  if (key >= 0) {
+    isInside = true;
+    if (!isDrawing && !isMoving) {
+      concreteContainer.style.cursor = "grab";
+    }
+  } else {
+    isInside = false;
+    if (!isMoving) {
+      concreteContainer.style.cursor = "crosshair";
+    }
+  }
+}
 
 function update() {
 
 
- // Permanent Mouse event Listener (get position / set cursor / ... )
- concreteContainer.addEventListener('mousemove', () => {
-  // Get Cursor Current Coords  
-  boundingRect = concreteContainer.getBoundingClientRect();  
- 
-  mouse.x = event.clientX - boundingRect.left;
-  mouse.y = event.clientY - boundingRect.top;
-  key = viewport.getIntersection(mouse.x, mouse.y);
+  // Permanent Mouse event Listener (get position / set cursor / ... )
+  concreteContainer.addEventListener('mousemove', () => {
+    // Get Cursor Current Coords  
+    boundingRect = concreteContainer.getBoundingClientRect();
+    mouse.x = event.clientX - boundingRect.left;
+    mouse.y = event.clientY - boundingRect.top;
+    key = viewport.getIntersection(mouse.x, mouse.y);
 
-  // IF THERE ALREADY IS A CIRCLE
-  if (center && radius) {
-    shapeIsCircle = true;    
-    // if (layer1.scene.context.isPointInPath(mouse.x , mouse.y)) {
-      if(key>=0) {
-      isInside = true;
-      if (!isDrawing && !isMoving) {
-        concreteContainer.style.cursor = "grab";
-      }
-    } else {
-      isInside = false;
-      if (!isMoving) {
-      concreteContainer.style.cursor = "crosshair";
-      }
-    }    
-  }
+    //*** RECTANGLES ***
+    if (x2 && y2 && x0 && y0) {
+      shapeIsRectangle = true;
+      handleCursor();
+      getCornerPositions();
+    }
+    // *** CIRCLES ***
+    if (center && radius) {
+      shapeIsCircle = true;
+      handleCursor();
+    }
 
-  if (toolIsCircle) {
-    if (mouseDown === true) {
-      if (isMoving === false) {
-        // Radius: (dc = X & Y components ) 
-        dc.x = (event.x - x0) / 2;
-        dc.y = (event.y - y0) / 2;
-        radius = Math.sqrt(Math.pow(dc.x, 2) + Math.pow(dc.y, 2));
-        // Center: X and Y Coords      
-        center.x = x0 + dc.x;
-        center.y = y0 + dc.y;
-      } else {
-        center.x = x0 + (mouse.x - mx0);
-        center.y = y0 + (mouse.y - my0);
+
+
+    // NEW
+    if (mouseDown) {
+      if (toolIsRectangle) {
+        if (isMoving === false) {
+          // New Rectangle coords
+          x2 = event.x;
+          y2 = event.y;
+          dx = x2 - x0;
+          dy = y2 - y0;
+        } else {
+          // Moving Rectangle Coords
+          mx = dx0 + (mouse.x - mx0);
+          my = dy0 + (mouse.y - my0);
+          x2 = mx + dx;
+          y2 = my + dy;
+          x0 = mx;
+          y0 = my;
+        }
       }
-      if (isDrawing || isMoving) {        
-        drawCircle(circles[0]);
-        drawHitCircle(circles[0]);
+      // ************** CIRCLES **************
+      //  NEW
+      if (toolIsCircle) {
+        if (isMoving === false) {
+          // Radius: (dc = X & Y vectors ) 
+          dc.x = (event.x - x0) / 2;
+          dc.y = (event.y - y0) / 2;
+          radius = Math.sqrt(Math.pow(dc.x, 2) + Math.pow(dc.y, 2));
+          // Center: X and Y Coords      
+          center.x = x0 + dc.x;
+          center.y = y0 + dc.y;
+        } else {
+          center.x = x0 + (mouse.x - mx0);
+          center.y = y0 + (mouse.y - my0);
+        }
+      }
+
+      if (isDrawing || isMoving) {
+        draw(circles[0]);
+        drawHit(circles[0]);
       }
     }
-  }
-});
+  });
 
 
-concreteContainer.addEventListener('mouseup', () => {
-  if (!toolIsFreeDraw) {
-    isDrawing = false;
-    isMoving = false;
-  }
-  mouseDown = false;
-  // canvas.removeEventListener('mousemove', rectangleOnMove);
-});
-
-concreteContainer.addEventListener('mousedown', () => {
-  mouseDown = true;
-  if (toolIsRectangle) {
-    if (isInside === false) {
-      // set Origin on Cursor location
-      x0 = event.x;
-      y0 = event.y;
-      isDrawing = true;
-    } else {
-      // set Origin/ Dimensions as previous Shape's. 
-      concreteContainer.style.cursor = "all-scroll";
-      isMoving = true;
-      dx0 = x0;
-      dy0 = y0;
-      mx0 = mouse.x;
-      my0 = mouse.y;
+  concreteContainer.addEventListener('mouseup', () => {
+    if (!toolIsFreeDraw) {
+      isDrawing = false;
+      isMoving = false;
     }
-  } else if (toolIsCircle) {
+    mouseDown = false;
+    // canvas.removeEventListener('mousemove', rectangleOnMove);
+  });
+
+  concreteContainer.addEventListener('mousedown', () => {
     mouseDown = true;
-    if (isInside === false) {
-      // Register where circle starts
-      x0 = mouse.x;
-      y0 = mouse.y;
-      isDrawing = true;
-    } else {
-      concreteContainer.style.cursor = "all-scroll";
-      isMoving = true;
-      // Register current Center (x0,y0);
-      x0 = center.x;
-      y0 = center.y;
-      // Register mouse pos on dragstart 
-      mx0 = mouse.x;
-      my0 = mouse.y;
+    if (toolIsRectangle) {
+      if (isInside === false) {
+        // set Origin on Cursor location
+        x0 = event.x;
+        y0 = event.y;
+        isDrawing = true;
+      } else {
+        // set Origin/ Dimensions as previous Shape's. 
+        concreteContainer.style.cursor = "all-scroll";
+        isMoving = true;
+        dx0 = x0;
+        dy0 = y0;
+        mx0 = mouse.x;
+        my0 = mouse.y;
+      }
+    } else if (toolIsCircle) {
+      mouseDown = true;
+      if (isInside === false) {
+        // Register where circle starts
+        x0 = mouse.x;
+        y0 = mouse.y;
+        isDrawing = true;
+      } else {
+        concreteContainer.style.cursor = "all-scroll";
+        isMoving = true;
+        // Register current Center (x0,y0);
+        x0 = center.x;
+        y0 = center.y;
+        // Register mouse pos on dragstart 
+        mx0 = mouse.x;
+        my0 = mouse.y;
+      }
     }
-  }
-});
+  });
 }
 
 update();
