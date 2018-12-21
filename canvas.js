@@ -184,7 +184,6 @@ function update() {
         canvas.style.cursor = "crosshair";
       }
     }
-
     if (toolIsRectangle) {
       if (mouseDown === true) {
         if (isMoving === false) {
@@ -277,12 +276,14 @@ function update() {
       }
     }
   });
-
+  /**
+   * @returns boolean selonsi
+   */
   canvas.addEventListener('click', function addAnchors() {
     // Register Cursor Coords, push in array    
     if (toolIsFreeDraw) {
       if (shapeClosed === true) {
-        freeDrawPoints = [];
+        // freeDrawPoints = [];
         shapeClosed = false;
       }
       nextPoint = {
@@ -292,7 +293,7 @@ function update() {
       if ( freeDrawPoints[1] ) {
         close = Math.sqrt(Math.pow(nextPoint.x - freeDrawPoints[0].x, 2) + Math.pow(nextPoint.y - freeDrawPoints[0].y, 2));
 
-        if ( close < 8 ) {      
+        if ( close < 200 ) {      
 
           lastPoint = freeDrawPoints[0];
           shapeClosed = true;   

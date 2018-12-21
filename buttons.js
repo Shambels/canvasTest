@@ -3,8 +3,6 @@ function chooseRectangleTool() {
   toolIsFreeDraw = false;
   toolIsRectangle = true;
   update();
-
-  console.log(toolIsRectangle, toolIsCircle, toolIsFreeDraw);
 }
 
 function chooseCircleTool() {
@@ -12,15 +10,13 @@ function chooseCircleTool() {
   toolIsFreeDraw = false;
   toolIsCircle = true;
   update();
-  console.log(toolIsRectangle, toolIsCircle, toolIsFreeDraw);
 }
 
 function chooseFreeDrawTool() {
   toolIsRectangle = false;
   toolIsCircle = false;
   toolIsFreeDraw = true;
-  update();
-  console.log(toolIsRectangle, toolIsCircle, toolIsFreeDraw);
+  update();  
 };
 
 function addLayer() {

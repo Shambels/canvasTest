@@ -1,14 +1,3 @@
-function drawHit(config) {
-  var hit = config.layer.hit,
-    c = hit.context;
-  hit.clear();
-  c.save();
-  c.beginPath();
-  drawingSetup(c);
-  c.fill();
-  c.restore();
-}
-
 function draw(config) {
   var scene = config.layer.scene;
   var c = scene.context;
@@ -16,21 +5,24 @@ function draw(config) {
   c.setLineDash([5, 5]);
   c.fillStyle = config.color;
   scene.clear();
-  c.save();
-  c.beginPath();
-  if (toolIsRectangle) {
-    setupRectangle(c);    
-  } else if (toolIsCircle) {
-    setupCircle(c);
-  } else if (toolIsFreeDraw) {
-    setupFreeShape(c);
-  }
+  drawingSetup(c);
   c.stroke();
-  c.restore();
+  // c.restore();
   viewport.render();
 }
 
+function drawHit(config) {
+  var hit = config.layer.hit,
+    c = hit.context;
+  hit.clear();
+  drawingSetup(c);
+  c.fill();
+  c.restore();
+}
+
 function drawingSetup(c) {
+  c.save();
+  c.beginPath();
   if (toolIsRectangle) {
     setupRectangle(c);    
   } else if (toolIsCircle) {
@@ -86,7 +78,6 @@ function getCornerPositions() {
 function orderCornerPositions(a, b) {
   return a.x - b.x || a.y - b.y
 }
-
 
 var concreteContainer = document.getElementById('concreteContainer');
 // create viewport
@@ -158,7 +149,7 @@ var nextPoint = {
 }
 var lastPoint;
 var close;
-var shapeClosed = false;
+var shapeClosed = true;
 
 
 var circles = [{
@@ -175,6 +166,12 @@ var key;
 
 
 function handleCursor() {
+  boundingRect = concreteContainer.getBoundingClientRect();
+  mouse.x = event.clientX - boundingRect.left;
+  mouse.y = event.clientY - boundingRect.top;
+
+  key = viewport.getIntersection(mouse.x, mouse.y);
+
   if (key >= 0) {
     isInside = true;
     if (!isDrawing && !isMoving) {
@@ -188,33 +185,23 @@ function handleCursor() {
   }
 }
 
-function update() {
-
-
-  // Permanent Mouse event Listener (get position / set cursor / ... )
+// function update() {
   concreteContainer.addEventListener('mousemove', () => {
-    // Get Cursor Current Coords  
-    boundingRect = concreteContainer.getBoundingClientRect();
-    mouse.x = event.clientX - boundingRect.left;
-    mouse.y = event.clientY - boundingRect.top;
-    key = viewport.getIntersection(mouse.x, mouse.y);
+    // Get Cursor Current Coords
+    handleCursor();
 
     //*** RECTANGLES ***
     if (x2 && y2 && x0 && y0) {
       shapeIsRectangle = true;
-      handleCursor();
       getCornerPositions();
     }
     // *** CIRCLES ***
     if (center && radius) {
-      shapeIsCircle = true;
-      handleCursor();
+      shapeIsCircle = true; 
     }
-
-
-
-    // NEW
+    // NEW SHAPE
     if (mouseDown) {
+      //*** RECTANGLES ***
       if (toolIsRectangle) {
         if (isMoving === false) {
           // New Rectangle coords
@@ -232,9 +219,8 @@ function update() {
           y0 = my;
         }
       }
-      // ************** CIRCLES **************
-      //  NEW
-      if (toolIsCircle) {
+      // *** CIRCLES ***      
+      else if (toolIsCircle) {
         if (isMoving === false) {
           // Radius: (dc = X & Y vectors ) 
           dc.x = (event.x - x0) / 2;
@@ -247,9 +233,14 @@ function update() {
           center.x = x0 + (mouse.x - mx0);
           center.y = y0 + (mouse.y - my0);
         }
-      }
-
+      } 
       if (isDrawing || isMoving) {
+        draw(circles[0]);
+        drawHit(circles[0]);
+      }
+    } 
+    if (toolIsFreeDraw) {
+      if (!shapeClosed) {
         draw(circles[0]);
         drawHit(circles[0]);
       }
@@ -262,8 +253,7 @@ function update() {
       isDrawing = false;
       isMoving = false;
     }
-    mouseDown = false;
-    // canvas.removeEventListener('mousemove', rectangleOnMove);
+    mouseDown = false;    
   });
 
   concreteContainer.addEventListener('mousedown', () => {
@@ -302,6 +292,37 @@ function update() {
       }
     }
   });
-}
+  concreteContainer.addEventListener('click', () => {
+    // Register Cursor Coords, push in array    
+    if (toolIsFreeDraw) {
+      if (shapeClosed === true) {
+        freeDrawPoints = [];
+        shapeClosed = false;
+      }
+      nextPoint = {
+        x: mouse.x,
+        y: mouse.y
+      }
+      if ( freeDrawPoints[1] ) {
+        close = Math.sqrt(Math.pow(nextPoint.x - freeDrawPoints[0].x, 2) + Math.pow(nextPoint.y - freeDrawPoints[0].y, 2));
+        console.log(close);
+        if ( close < 8 ) {      
+          lastPoint = freeDrawPoints[0];
+          shapeClosed = true;                               
+        }
+      }
+      freeDrawPoints.push(nextPoint);
+      if (freeDrawPoints.length < 2 ) {
+        var c = circles[0].layer.scene.context;
+        console.log(c);       
+        c.beginPath();
+        c.moveTo(nextPoint.x, nextPoint.y);
+        isDrawing = true;
+      };
+      console.table(freeDrawPoints); 
+      // c.closePath();     
+    }
+  });
+// }
 
-update();
+// update();
